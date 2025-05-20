@@ -1,13 +1,7 @@
-# BashIdler – Minimal Idle Game in C++
+# BashIdler
 
 A lightweight terminal-based idle game written in C++, designed to be simple, clean, and fun to tinker with.  
 Unlock generators, automate your point production, and let the game run passively in the background while you chill.
-
----
-
-## 📸 Preview
-
-*(Coming soon – it's a terminal game for now 👀)*
 
 ---
 
