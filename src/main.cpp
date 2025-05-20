@@ -12,26 +12,40 @@ using namespace std;
 
 int main() {
     thread t1(updateGameStatus);
-    t1.detach(); // Thread im Hintergrund laufen lassen
-    system("clear");
+    t1.detach();
+    clearScreen();
     string input;
     while (true) {
         cout << "[bash@idler ~]$ ";
-        getline(cin, input); // Ganze Zeile lesen
+        getline(cin, input);
 
         if (input == "yay -S gen") {
             lock_guard<mutex> guard(balance_mutex);
-            if (balance >= 10) {
-                balance -= 10;
+            double cost = getGeneratorCost(availableGens);
+            if (balance >= cost) {
+                balance -= cost;
                 availableGens++;
-                cout << "You now have " << availableGens << " Gens.\n";
+                cout << "Generator gekauft! (Kosten: " << cost << "$)\n";
+                cout << "Du hast jetzt " << availableGens << " Generatoren.\n";
             } else {
-                cout << "Not enough balance!\n";
+                cout << "Not enough Money! You Need: " << cost << "$\n";
             }
         }
-        else if (input == "$BALANCE") {
+        else if (input == "help") {
+            help();
+        }
+        else if (input == "yay -Ss") {
+            double cost = getGeneratorCost(availableGens);
+            cout << cost << "$" << endl;
+        }
+        else if (input == "echo $BALANCE") {
             lock_guard<mutex> guard(balance_mutex);
             cout << "You have " << balance << "$\n";
+        }
+        else if (input == "ls") {
+            genList();
+        } else {
+            cout << input << ": command not found" << endl;
         }
     }
     return 0;
