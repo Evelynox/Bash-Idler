@@ -1,29 +1,35 @@
-//engine.h
-#ifndef GLOABLS_H
-#define GLOABLS_H
+#ifndef ENGINE_H
+#define ENGINE_H
 
-#include <cstdlib>  
-#include <thread>
-#include <chrono>
 #include <vector>
+#include <mutex>
+#include <string>
 
-extern double getGeneratorCost(int availableGens);
+extern std::mutex balance_mutex;
 extern double balance;
 extern int availableGens;
 
+struct Generator {
+    double base_income;
+    double income_multiplier = 1.0;
+    double speed = 1.0; // Cycles per second
+    int level = 1;
+    std::string name;
+};
+
+extern std::vector<Generator> generators;
+
+// Function declarations
 void clearScreen();
-void collectResources();
 void updateGameStatus();
 void genList();
 void help();
-
-//struct Generator {
-    //double income;    // Geld pro Sekunde
-    //double speed;     // Produktionsgeschwindigkeit
-    //int level;        // Upgrade-Level
-    //double efficiency;// Effizienz-Faktor
-//};
-
-//extern vector<Generator> generators;
+void showGeneratorStats(int index = -1);
+void upgradeGenerator(int index, const std::string& type);
+double getGeneratorCost(int availableGens);
+void buyGenerator();
+std::string generateGenName();
+double calculatePassiveIncome();
+double getGeneratorIncomePerSecond(const Generator& gen);
 
 #endif

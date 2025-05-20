@@ -1,51 +1,85 @@
-// main.cpp
 #include <iostream>
 #include <thread>
-#include <mutex>
+#include <sstream>
+#include <vector>
 #include "engine.h"
 
-std::mutex balance_mutex;
-double balance{10};
-int availableGens{0};
-
-using namespace std;
+std::vector<std::string> split(const std::string& s) {
+    std::istringstream iss(s);
+    std::vector<std::string> tokens;
+    std::string token;
+    while (iss >> token) tokens.push_back(token);
+    return tokens;
+}
 
 int main() {
-    thread t1(updateGameStatus);
-    t1.detach();
+    srand(time(0));
+
+    std::thread gameThread(updateGameStatus);
+    gameThread.detach();
+
     clearScreen();
-    string input;
+    std::cout << "Type 'help' for commands\n";
+
     while (true) {
-        cout << "[bash@idler ~]$ ";
-        getline(cin, input);
+        std::cout << "[bash@idler ~]$ ";
+        std::string input;
+        std::getline(std::cin, input);
+
+        auto tokens = split(input);
 
         if (input == "yay -S gen") {
-            lock_guard<mutex> guard(balance_mutex);
+            std::lock_guard<std::mutex> guard(balance_mutex);
             double cost = getGeneratorCost(availableGens);
             if (balance >= cost) {
                 balance -= cost;
-                availableGens++;
-                cout << "Generator gekauft! (Kosten: " << cost << "$)\n";
-                cout << "Du hast jetzt " << availableGens << " Generatoren.\n";
+                buyGenerator();
+                std::cout << "Purchased " << generators.back().name
+                          << " for $" << cost << "\n";
             } else {
-                cout << "Not enough Money! You Need: " << cost << "$\n";
+                std::cout << "Need $" << cost - balance << " more!\n";
             }
         }
         else if (input == "help") {
             help();
         }
         else if (input == "yay -Ss") {
-            double cost = getGeneratorCost(availableGens);
-            cout << cost << "$" << endl;
+            std::cout << "Next generator costs: $"
+                      << getGeneratorCost(availableGens) << "\n";
         }
         else if (input == "echo $BALANCE") {
-            lock_guard<mutex> guard(balance_mutex);
-            cout << "You have " << balance << "$\n";
+            std::lock_guard<std::mutex> guard(balance_mutex);
+            std::cout << "Balance: $" << balance << "\n";
         }
         else if (input == "ls") {
             genList();
-        } else {
-            cout << input << ": command not found" << endl;
+        }
+        else if (!tokens.empty() && tokens[0] == "stats") {
+            if (tokens.size() == 1) showGeneratorStats();
+            else try {
+                int num = std::stoi(tokens[1]);
+                showGeneratorStats(num);
+            } catch (...) {
+                std::cout << "Usage: stats [N]\n";
+            }
+        }
+        else if (tokens.size() == 4 && tokens[0] == "yay" && tokens[1] == "-U") {
+            std::string type = tokens[2];
+            try {
+                int num = std::stoi(tokens[3]);
+                if (type == "money" || type == "speed")
+                    upgradeGenerator(num, type);
+                else
+                    std::cout << "Usage: yay -U [money|speed] N\n";
+            } catch (...) {
+                std::cout << "Usage: yay -U [money|speed] N\n";
+            }
+        }
+        else if (input == "clear") {
+            clearScreen();
+        }
+        else {
+            std::cout << input << ": command not found\n";
         }
     }
     return 0;

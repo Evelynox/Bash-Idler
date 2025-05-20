@@ -1,40 +1,86 @@
-// engine.cpp
+#include "engine.h"
 #include <iostream>
 #include <chrono>
-#include <mutex>
 #include <cmath>
-#include "engine.h"
+#include <cstdlib>
+#include <ctime>
+#include <thread>
+#include <vector>
 
-using namespace std;
+// Global variables
+std::mutex balance_mutex;
+double balance = 500.0;
+int availableGens = 0;
+std::vector<Generator> generators;
 
-extern mutex balance_mutex;
+// Linux-inspired generator names
+std::vector<std::string> linux_names = {
+    "systemd", "bash", "cron", "udev", "init", "sshd", "dbus", "Xorg", "pulseaudio", "journald", "grub", "zsh", "tmux", "screen"
+};
+
+std::string generateGenName() {
+    if (availableGens < (int)linux_names.size())
+        return linux_names[availableGens];
+    return "proc-" + std::to_string(availableGens + 1);
+}
+
+void buyGenerator() {
+    Generator newGen;
+    newGen.base_income = 50.0 + (generators.size() * 20.0);
+    newGen.speed = 1.0 / (1.0 + generators.size() * 0.2); // Cycles per second
+    newGen.name = generateGenName();
+    generators.push_back(newGen);
+    availableGens++;
+}
+
+double calculatePassiveIncome() {
+    double total = 0;
+    for (auto& gen : generators) {
+        total += gen.base_income * gen.income_multiplier * gen.speed;
+    }
+    return total * 0.1; // Only 10% as passive income
+}
+
+double getGeneratorIncomePerSecond(const Generator& gen) {
+    // income per second = (income per cycle) * (cycles per second)
+    return gen.base_income * gen.income_multiplier * gen.speed;
+}
 
 void updateGameStatus() {
     while (true) {
-        this_thread::sleep_for(chrono::seconds(1));
-        lock_guard<mutex> guard(balance_mutex);
-        balance += 1 * availableGens; // Jede Sekunde pro Generator
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::lock_guard<std::mutex> guard(balance_mutex);
+        balance += calculatePassiveIncome();
     }
 }
 
-void genList() {
-    for (int i = 0; i < availableGens; ++i) {
-        cout << "Generator " << i + 1 << endl;
+void upgradeGenerator(int index, const std::string& type) {
+    if (index > 0 && index <= (int)generators.size()) {
+        std::lock_guard<std::mutex> guard(balance_mutex);
+        auto& gen = generators[index-1];
+        double cost = gen.base_income * (10 + gen.level * 2);
+
+        if (balance >= cost) {
+            balance -= cost;
+            gen.level++;
+            if (type == "money") {
+                gen.income_multiplier *= 1.5;
+                std::cout << gen.name << "'s income upgraded!\n";
+            }
+            else if (type == "speed") {
+                gen.speed *= 1.3;
+                std::cout << gen.name << "'s speed upgraded!\n";
+            }
+        } else {
+            std::cout << "Not enough money for upgrade! Need $" << (cost - balance) << " more.\n";
+        }
+    } else {
+        std::cout << "Invalid generator index!\n";
     }
 }
 
 double getGeneratorCost(int availableGens) {
-    const double baseCost = 10;
-    const double multiplier = 1.15;
-    return baseCost * pow(multiplier, availableGens); 
-}
-
-void help() {
-    cout << "\033[1m yay -S gen \033[0m\t\tPurchases a generator if you have enough money. Increases your generator count." << endl;
-    cout << "\033[1m yay -Ss \033[0m\t\tShows the current cost of the next generator." << endl;
-    cout << "\033[1m echo $BALANCE \033[0m\t\tDisplays your current balance in dollars." << endl;
-    cout << "\033[1m ls \033[0m\t\t\tLists all available generators and their stats." << endl;
-    cout << "\033[1m (any other) \033[0m\t\tUnrecognized commands will return 'command not found' like a real shell." << endl;
+    return 100.0 * pow(2.5, availableGens);
 }
 
 void clearScreen() {
@@ -43,4 +89,60 @@ void clearScreen() {
 #else
     system("clear");
 #endif
+}
+
+void help() {
+    std::cout <<
+        "Commands:\n"
+        "  yay -S gen               - Buy a new generator\n"
+        "  yay -Ss                  - Show cost of next generator\n"
+        "  yay -U [money|speed] N   - Upgrade generator N's income or speed\n"
+        "  echo $BALANCE            - Show your current balance\n"
+        "  ls                       - List all owned generators\n"
+        "  stats [N]                - Show stats for all or generator N\n"
+        "  clear                    - Clear the screen\n"
+        "  help                     - Show this help message\n";
+}
+
+void genList() {
+    if (generators.empty()) {
+        std::cout << "No generators owned.\n";
+        return;
+    }
+    std::cout << "ID | Name        | Level | Income/cycle | Cycle time (s) | Income/sec\n";
+    std::cout << "---------------------------------------------------------------------\n";
+    int i = 1;
+    for (const auto& gen : generators) {
+        double cycle_time = 1.0 / gen.speed;
+        double income_per_cycle = gen.base_income * gen.income_multiplier;
+        double income_per_sec = getGeneratorIncomePerSecond(gen);
+        std::cout << i << "  | "
+                  << gen.name << std::string(12 - gen.name.length(), ' ')
+                  << "| " << gen.level
+                  << "     | $" << (int)income_per_cycle
+                  << "         | " << cycle_time
+                  << "          | $" << (int)income_per_sec << "\n";
+        ++i;
+    }
+}
+
+void showGeneratorStats(int index) {
+    if (index == -1) {
+        std::cout << "All generators:\n";
+        genList();
+        return;
+    }
+    if (index > 0 && index <= (int)generators.size()) {
+        const auto& gen = generators[index-1];
+        double cycle_time = 1.0 / gen.speed;
+        double income_per_cycle = gen.base_income * gen.income_multiplier;
+        double income_per_sec = getGeneratorIncomePerSecond(gen);
+        std::cout << "Generator " << index << " (" << gen.name << "):\n"
+                  << "  Level: " << gen.level << "\n"
+                  << "  Income per cycle: $" << (int)income_per_cycle << "\n"
+                  << "  Cycle time: " << cycle_time << " seconds\n"
+                  << "  Income per second: $" << (int)income_per_sec << "\n";
+    } else {
+        std::cout << "Invalid generator number!\n";
+    }
 }
