@@ -14,9 +14,10 @@ extern bool simpleModeOn;
 struct Generator {
     double base_income;
     double income_multiplier = 1.0;
-    double speed = 1.0; // Cycles per second
-    int level = 1;
+    double speed = 1.0;
     std::string name;
+    int moneyLevel{1};
+    int speedLevel{1};
 };
 
 extern std::vector<Generator> generators;

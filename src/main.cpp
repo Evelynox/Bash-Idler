@@ -47,7 +47,7 @@ int main() {
             std::cout << "Next generator costs: $"
                       << getGeneratorCost(availableGens) << "\n";
         }
-        else if (input == "echo $BALANCE") {
+        else if (input == "echo") {
             std::lock_guard<std::mutex> guard(balance_mutex);
             std::cout << "Balance: $" << balance << "\n";
         }
