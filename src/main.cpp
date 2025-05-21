@@ -51,10 +51,10 @@ int main() {
             std::lock_guard<std::mutex> guard(balance_mutex);
             std::cout << "Balance: $" << balance << "\n";
         }
-        else if (input == "ls") {
+        else if (input == "lsblk") {
             genList();
         }
-        else if (!tokens.empty() && tokens[0] == "stats") {
+        else if (!tokens.empty() && tokens[0] == "ls") {
             if (tokens.size() == 1) showGeneratorStats();
             else try {
                 int num = std::stoi(tokens[1]);

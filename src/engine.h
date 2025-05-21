@@ -4,10 +4,12 @@
 #include <vector>
 #include <mutex>
 #include <string>
+#include <iomanip>
 
 extern std::mutex balance_mutex;
 extern double balance;
 extern int availableGens;
+extern bool simpleModeOn;
 
 struct Generator {
     double base_income;
@@ -31,5 +33,6 @@ void buyGenerator();
 std::string generateGenName();
 double calculatePassiveIncome();
 double getGeneratorIncomePerSecond(const Generator& gen);
+void simpleMode();
 
 #endif

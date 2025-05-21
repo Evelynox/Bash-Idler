@@ -7,13 +7,11 @@
 #include <thread>
 #include <vector>
 
-// Global variables
 std::mutex balance_mutex;
-double balance = 500.0;
+double balance = 100.0;
 int availableGens = 0;
 std::vector<Generator> generators;
 
-// Linux-inspired generator names
 std::vector<std::string> linux_names = {
     "systemd", "bash", "cron", "udev", "init", "sshd", "dbus", "Xorg", "pulseaudio", "journald", "grub", "zsh", "tmux", "screen"
 };
@@ -96,10 +94,10 @@ void help() {
         "Commands:\n"
         "  yay -S gen               - Buy a new generator\n"
         "  yay -Ss                  - Show cost of next generator\n"
-        "  yay -U [money|speed] N   - Upgrade generator N's income or speed\n"
+        "  yay -U [money|speed] [N] - Upgrade generator N's income or speed\n"
         "  echo $BALANCE            - Show your current balance\n"
-        "  ls                       - List all owned generators\n"
-        "  stats [N]                - Show stats for all or generator N\n"
+        "  lsblk                    - List all owned generators\n"
+        "  ls [N]                   - Show stats for all or generator N\n"
         "  clear                    - Clear the screen\n"
         "  help                     - Show this help message\n";
 }
@@ -109,19 +107,29 @@ void genList() {
         std::cout << "No generators owned.\n";
         return;
     }
-    std::cout << "ID | Name        | Level | Income/cycle | Cycle time (s) | Income/sec\n";
-    std::cout << "---------------------------------------------------------------------\n";
+    std::cout << std::left
+              << std::setw(3)  << "ID"   << " | "
+              << std::setw(12) << "Name" << " | "
+              << std::setw(5)  << "Level" << " | "
+              << std::setw(13) << "Income/cycle" << " | "
+              << std::setw(15) << "Cycle time (s)" << " | "
+              << std::setw(11) << "Income/sec" << "\n";
+    std::cout << std::string(76, '-') << "\n";
+
     int i = 1;
     for (const auto& gen : generators) {
         double cycle_time = 1.0 / gen.speed;
         double income_per_cycle = gen.base_income * gen.income_multiplier;
         double income_per_sec = getGeneratorIncomePerSecond(gen);
-        std::cout << i << "  | "
-                  << gen.name << std::string(12 - gen.name.length(), ' ')
-                  << "| " << gen.level
-                  << "     | $" << (int)income_per_cycle
-                  << "         | " << cycle_time
-                  << "          | $" << (int)income_per_sec << "\n";
+
+        std::cout << std::right
+                  << std::setw(3) << i << " | "
+                  << std::left
+                  << std::setw(12) << gen.name << " | "
+                  << std::setw(5)  << gen.level << " | "
+                  << "$" << std::setw(12) << std::right << (int)income_per_cycle << " | "
+                  << std::setw(15) << std::fixed << std::setprecision(2) << cycle_time << " | "
+                  << "$" << std::setw(10) << std::right << (int)income_per_sec << "\n";
         ++i;
     }
 }
@@ -146,3 +154,5 @@ void showGeneratorStats(int index) {
         std::cout << "Invalid generator number!\n";
     }
 }
+
+
