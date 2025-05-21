@@ -1,7 +1,6 @@
 #include <iostream>
 #include <thread>
 #include <sstream>
-#include <vector>
 #include "engine.h"
 
 std::vector<std::string> split(const std::string& s) {
@@ -13,22 +12,33 @@ std::vector<std::string> split(const std::string& s) {
 }
 
 int main() {
+
+std::map<std::string, std::string> commands = {
+    {"yay", "yay"},
+    {"echo", "echo"},
+    {"lsblk", "lsblk"},
+    {"ls", "ls"},
+    {"clear", "clear"},
+    {"help", "help"}
+};
+
     srand(time(0));
 
     std::thread gameThread(updateGameStatus);
     gameThread.detach();
-
     clearScreen();
     std::cout << "Type 'help' for commands\n";
 
+    std::string username = "bash";
+
     while (true) {
-        std::cout << "[bash@idler ~]$ ";
+        std::cout << "[" << username << "@idler ~]$ ";
         std::string input;
         std::getline(std::cin, input);
 
         auto tokens = split(input);
 
-        if (input == "yay -S gen") {
+        if (input == commands["yay"] + " -S gen") {
             std::lock_guard<std::mutex> guard(balance_mutex);
             double cost = getGeneratorCost(availableGens);
             if (balance >= cost) {
@@ -75,10 +85,23 @@ int main() {
                 std::cout << "Usage: yay -U [money|speed] N\n";
             }
         }
+        else if (input == "settings") {
+            settingsMenu(username);
+        }
+        else if (tokens.size() == 3 && tokens[0] == "mv") {
+            std::string oldCmd = tokens[1];
+            std::string newCmd = tokens[2];
+
+            if (commands.count(oldCmd)) {
+                commands[oldCmd] = newCmd;
+                std::cout << "Renamed command '" << oldCmd << "' to '" << newCmd << "'\n";
+            } else {
+                std::cout << "Command '" << oldCmd << "' not found.\n";
+            }
+        }
         else if (input == "clear") {
             clearScreen();
-        }
-        else {
+        } else {
             std::cout << input << ": command not found\n";
         }
     }

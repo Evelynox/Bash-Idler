@@ -1,11 +1,4 @@
 #include "engine.h"
-#include <iostream>
-#include <chrono>
-#include <cmath>
-#include <cstdlib>
-#include <ctime>
-#include <thread>
-#include <vector>
 
 std::mutex balance_mutex;
 double balance = 100.0;
@@ -100,7 +93,7 @@ void clearScreen() {
 void help() {
     std::cout <<
         "Commands:\n"
-        "  yay -S gen               - Buy a new generator\n"
+        " -S gen               - Buy a new generator\n"
         "  yay -Ss                  - Show cost of next generator\n"
         "  yay -U [money|speed] [N] - Upgrade generator N's income or speed\n"
         "  echo                     - Show your current balance\n"
@@ -162,6 +155,33 @@ void showGeneratorStats(int index) {
         std::cout << "Invalid generator number!\n";
     }
 }
+
+void settingsMenu(std::string& username) {
+    int menuInput{0};
+
+    while (true) {
+        std::cout << "Settings:\n";
+        std::cout << "[1] Change Username\n";
+        std::cout << "[0] Back\n";
+        std::cout << "(settings) ";
+        std::cin >> menuInput;
+
+        switch(menuInput) {
+            case 0: return;
+            case 1: {
+                std::cout << "New username: ";
+                std::cin >> username;
+                std::transform(username.begin(), username.end(), username.begin(),
+                               [](unsigned char c){ return std::tolower(c); });
+                break;
+            }
+            default:
+                std::cout << menuInput << ": Was not found.\n";
+                break;
+        }
+    }
+}
+
 
 
 

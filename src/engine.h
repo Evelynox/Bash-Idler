@@ -1,15 +1,25 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#include <iostream>
 #include <vector>
 #include <mutex>
 #include <string>
 #include <iomanip>
+#include <algorithm>
+#include <cctype> 
+#include <map>
+#include <thread>
+#include <ctime>
+#include <cstdlib>
+#include <cmath>
+#include <chrono>
 
 extern std::mutex balance_mutex;
 extern double balance;
 extern int availableGens;
 extern bool simpleModeOn;
+extern std::string username;
 
 struct Generator {
     double base_income;
@@ -35,5 +45,7 @@ std::string generateGenName();
 double calculatePassiveIncome();
 double getGeneratorIncomePerSecond(const Generator& gen);
 void simpleMode();
+void settingsMenu(std::string& username);
+std::map<std::string, std::string> commands
 
 #endif
