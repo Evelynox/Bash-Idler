@@ -12,17 +12,10 @@ std::vector<std::string> split(const std::string& s) {
 }
 
 int main() {
-
-std::map<std::string, std::string> commands = {
-    {"yay", "yay"},
-    {"echo", "echo"},
-    {"lsblk", "lsblk"},
-    {"ls", "ls"},
-    {"clear", "clear"},
-    {"help", "help"}
-};
-
     srand(time(0));
+    
+    // Command System initialisieren
+    initializeCommands();
 
     std::thread gameThread(updateGameStatus);
     gameThread.detach();
@@ -37,8 +30,37 @@ std::map<std::string, std::string> commands = {
         std::getline(std::cin, input);
 
         auto tokens = split(input);
+        if (tokens.empty()) continue;
 
-        if (input == commands["yay"] + " -S gen") {
+        std::string command = tokens[0];
+        std::string originalCmd = getOriginalCommand(command);
+
+        // mv Command special handling
+        if (originalCmd == "rename" && tokens.size() >= 3) {
+            std::string oldCmd = tokens[1];
+            std::string newCmd = tokens[2];
+            
+            // Anführungszeichen entfernen falls vorhanden
+            if (oldCmd.front() == '"' && oldCmd.back() == '"') 
+                oldCmd = oldCmd.substr(1, oldCmd.size()-2);
+            if (newCmd.front() == '"' && newCmd.back() == '"') 
+                newCmd = newCmd.substr(1, newCmd.size()-2);
+            
+            // Mehrere Wörter zu einem Command zusammenfügen
+            for (size_t i = 3; i < tokens.size(); ++i) {
+                newCmd += " ";
+                std::string part = tokens[i];
+                if (part.front() == '"' && part.back() == '"') 
+                    part = part.substr(1, part.size()-2);
+                newCmd += part;
+            }
+            
+            moveCommand(oldCmd, newCmd);
+            continue;
+        }
+
+        // Normale Commands verarbeiten
+        if (originalCmd == "buy_gen") {
             std::lock_guard<std::mutex> guard(balance_mutex);
             double cost = getGeneratorCost(availableGens);
             if (balance >= cost) {
@@ -50,58 +72,53 @@ std::map<std::string, std::string> commands = {
                 std::cout << "Need $" << cost - balance << " more!\n";
             }
         }
-        else if (input == "help") {
+        else if (originalCmd == "help_menu") {
             help();
         }
-        else if (input == "yay -Ss") {
+        else if (originalCmd == "show_cost") {
             std::cout << "Next generator costs: $"
                       << getGeneratorCost(availableGens) << "\n";
         }
-        else if (input == "echo") {
+        else if (originalCmd == "balance") {
             std::lock_guard<std::mutex> guard(balance_mutex);
             std::cout << "Balance: $" << balance << "\n";
         }
-        else if (input == "lsblk") {
+        else if (originalCmd == "list_gens") {
             genList();
         }
-        else if (!tokens.empty() && tokens[0] == "ls") {
-            if (tokens.size() == 1) showGeneratorStats();
-            else try {
-                int num = std::stoi(tokens[1]);
-                showGeneratorStats(num);
-            } catch (...) {
-                std::cout << "Usage: stats [N]\n";
+        else if (originalCmd == "show_stats") {
+            if (tokens.size() == 1) {
+                showGeneratorStats(-1); // Alle anzeigen
+            } else {
+                try {
+                    int num = std::stoi(tokens[1]);
+                    showGeneratorStats(num);
+                } catch (...) {
+                    std::cout << "Usage: " << command << " [N]\n";
+                }
             }
         }
-        else if (tokens.size() == 4 && tokens[0] == "yay" && tokens[1] == "-U") {
-            std::string type = tokens[2];
+        else if (originalCmd == "upgrade_gen" && tokens.size() == 3) {
+            std::string type = tokens[1];
             try {
-                int num = std::stoi(tokens[3]);
-                if (type == "money" || type == "speed")
+                int num = std::stoi(tokens[2]);
+                if (type == "money" || type == "speed") {
                     upgradeGenerator(num, type);
-                else
-                    std::cout << "Usage: yay -U [money|speed] N\n";
+                } else {
+                    std::cout << "Usage: " << command << " [money|speed] N\n";
+                }
             } catch (...) {
-                std::cout << "Usage: yay -U [money|speed] N\n";
+                std::cout << "Usage: " << command << " [money|speed] N\n";
             }
+        }
+        else if (originalCmd == "clear_screen") {
+            clearScreen();
         }
         else if (input == "settings") {
+            std::cin.ignore(); // Buffer leeren für getline nach cin
             settingsMenu(username);
         }
-        else if (tokens.size() == 3 && tokens[0] == "mv") {
-            std::string oldCmd = tokens[1];
-            std::string newCmd = tokens[2];
-
-            if (commands.count(oldCmd)) {
-                commands[oldCmd] = newCmd;
-                std::cout << "Renamed command '" << oldCmd << "' to '" << newCmd << "'\n";
-            } else {
-                std::cout << "Command '" << oldCmd << "' not found.\n";
-            }
-        }
-        else if (input == "clear") {
-            clearScreen();
-        } else {
+        else {
             std::cout << input << ": command not found\n";
         }
     }

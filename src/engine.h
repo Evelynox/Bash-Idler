@@ -1,3 +1,4 @@
+//engine.h
 #ifndef ENGINE_H
 #define ENGINE_H
 
@@ -9,11 +10,13 @@
 #include <algorithm>
 #include <cctype> 
 #include <map>
+#include <unordered_map>
 #include <thread>
 #include <ctime>
 #include <cstdlib>
 #include <cmath>
 #include <chrono>
+#include <regex>
 
 extern std::mutex balance_mutex;
 extern double balance;
@@ -32,6 +35,10 @@ struct Generator {
 
 extern std::vector<Generator> generators;
 
+// Command System
+extern std::unordered_map<std::string, std::string> originalCommands;
+extern std::unordered_map<std::string, std::string> commandAliases;
+
 // Function declarations
 void clearScreen();
 void updateGameStatus();
@@ -46,6 +53,11 @@ double calculatePassiveIncome();
 double getGeneratorIncomePerSecond(const Generator& gen);
 void simpleMode();
 void settingsMenu(std::string& username);
-std::map<std::string, std::string> commands
+
+// Command System Functions
+void initializeCommands();
+bool moveCommand(const std::string& oldName, const std::string& newName);
+std::string getOriginalCommand(const std::string& alias);
+bool commandExists(const std::string& cmdName);
 
 #endif

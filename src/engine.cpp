@@ -1,3 +1,4 @@
+//engine.cpp
 #include "engine.h"
 
 std::mutex balance_mutex;
@@ -5,9 +6,70 @@ double balance = 100.0;
 int availableGens = 0;
 std::vector<Generator> generators;
 
+// Command System
+std::unordered_map<std::string, std::string> originalCommands;
+std::unordered_map<std::string, std::string> commandAliases;
+
 std::vector<std::string> linux_names = {
     "systemd", "bash", "cron", "udev", "init", "sshd", "dbus", "Xorg", "pulseaudio", "journald", "grub", "zsh", "tmux", "screen"
 };
+
+void initializeCommands() {
+    // Original Commands definieren
+    originalCommands = {
+        {"buy_gen", "yay -S gen"},
+        {"show_cost", "yay -Ss"},
+        {"upgrade_gen", "yay -U"},
+        {"balance", "echo"},
+        {"list_gens", "lsblk"},
+        {"show_stats", "ls"},
+        {"clear_screen", "clear"},
+        {"rename", "mv"},
+        {"help_menu", "help"}
+    };
+    
+    // Initial alle Commands auf sich selbst verweisen lassen
+    for (const auto& pair : originalCommands) {
+        commandAliases[pair.second] = pair.first;
+    }
+}
+
+bool moveCommand(const std::string& oldName, const std::string& newName) {
+    // Prüfen ob alter Command existiert
+    if (commandAliases.find(oldName) == commandAliases.end()) {
+        std::cout << "mv: command '" << oldName << "' not found\n";
+        return false;
+    }
+    
+    // Prüfen ob neuer Name bereits existiert
+    if (commandAliases.find(newName) != commandAliases.end()) {
+        std::cout << "mv: command '" << newName << "' already exists\n";
+        return false;
+    }
+    
+    // Original Command Key finden
+    std::string originalKey = commandAliases[oldName];
+    
+    // Neuen Alias erstellen
+    commandAliases[newName] = originalKey;
+    
+    // Alten Alias entfernen
+    commandAliases.erase(oldName);
+    
+    std::cout << "Command '" << oldName << "' renamed to '" << newName << "'\n";
+    return true;
+}
+
+std::string getOriginalCommand(const std::string& alias) {
+    if (commandAliases.find(alias) != commandAliases.end()) {
+        return commandAliases[alias];
+    }
+    return "";
+}
+
+bool commandExists(const std::string& cmdName) {
+    return commandAliases.find(cmdName) != commandAliases.end();
+}
 
 std::string generateGenName() {
     if (availableGens < (int)linux_names.size())
@@ -91,16 +153,41 @@ void clearScreen() {
 }
 
 void help() {
-    std::cout <<
-        "Commands:\n"
-        " -S gen               - Buy a new generator\n"
-        "  yay -Ss                  - Show cost of next generator\n"
-        "  yay -U [money|speed] [N] - Upgrade generator N's income or speed\n"
-        "  echo                     - Show your current balance\n"
-        "  lsblk                    - List all owned generators\n"
-        "  ls [N]                   - Show stats for all or generator N\n"
-        "  clear                    - Clear the screen\n"
-        "  help                     - Show this help message\n";
+    std::cout << "Commands:\n";
+    std::cout << std::left;
+
+    // Commands mit aktuellen Aliasen anzeigen
+    std::string buyCmd = "", showCostCmd = "", upgradeCmd = "", balanceCmd = "";
+    std::string listCmd = "", statsCmd = "", clearCmd = "", helpCmd = "", renameCmd = "";
+    
+    // Aktuelle Aliase finden
+    for (const auto& pair : commandAliases) {
+        if (pair.second == "buy_gen") buyCmd = pair.first;
+        else if (pair.second == "show_cost") showCostCmd = pair.first;
+        else if (pair.second == "upgrade_gen") upgradeCmd = pair.first;
+        else if (pair.second == "balance") balanceCmd = pair.first;
+        else if (pair.second == "list_gens") listCmd = pair.first;
+        else if (pair.second == "show_stats") statsCmd = pair.first;
+        else if (pair.second == "clear_screen") clearCmd = pair.first;
+        else if (pair.second == "help_menu") helpCmd = pair.first;
+        else if (pair.second == "rename") renameCmd = pair.first;
+    }
+
+    // Wirtschaftliche Aktionen
+    std::cout << "  " << std::setw(30) << buyCmd << "- Buy a new generator\n";
+    std::cout << "  " << std::setw(30) << showCostCmd << "- Show cost of next generator\n";
+    std::cout << "  " << std::setw(30) << upgradeCmd + " [money|speed] [N]" << "- Upgrade generator N's income or speed\n";
+
+    // Information & Übersicht
+    std::cout << "  " << std::setw(30) << balanceCmd << "- Show your current balance\n";
+    std::cout << "  " << std::setw(30) << listCmd << "- List all owned generators\n";
+    std::cout << "  " << std::setw(30) << statsCmd + " [N]" << "- Show stats for all or generator N\n";
+
+    // System & Bedienung
+    std::cout << "  " << std::setw(30) << clearCmd << "- Clear the screen\n";
+    std::cout << "  " << std::setw(30) << helpCmd << "- Show this help message\n";
+    std::cout << "  " << std::setw(30) << renameCmd + " [old] [new]" << "- Rename an existing command\n";
+    std::cout << "  " << std::setw(30) << "settings" << "- Open settings menu\n";
 }
 
 void genList() {
@@ -137,8 +224,13 @@ void genList() {
     }
 }
 
-
 void showGeneratorStats(int index) {
+    if (index == -1) {
+        // Alle Generatoren anzeigen
+        genList();
+        return;
+    }
+    
     if (index > 0 && index <= (int)generators.size()) {
         const auto& gen = generators[index - 1];
         double cycle_time = 1.0 / gen.speed;
@@ -181,7 +273,3 @@ void settingsMenu(std::string& username) {
         }
     }
 }
-
-
-
-
