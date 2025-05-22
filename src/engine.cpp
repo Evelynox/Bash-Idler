@@ -17,15 +17,15 @@ std::vector<std::string> linux_names = {
 void initializeCommands() {
     // Original Commands definieren
     originalCommands = {
-        {"buy_gen", "yay -S gen"},
-        {"show_cost", "yay -Ss"},
-        {"upgrade_gen", "yay -U"},
+        {"buy_gen", "yay"},
+        {"show_cost", "cat"},
+        {"upgrade_gen", "systemctl"},
         {"balance", "echo"},
         {"list_gens", "lsblk"},
         {"show_stats", "ls"},
         {"clear_screen", "clear"},
         {"rename", "mv"},
-        {"help_menu", "help"}
+        {"help_menu", "man"}
     };
     
     // Initial alle Commands auf sich selbst verweisen lassen
