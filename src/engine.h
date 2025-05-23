@@ -17,6 +17,8 @@
 #include <cmath>
 #include <chrono>
 #include <regex>
+#include <fstream>
+#include <filesystem>
 
 extern std::mutex balance_mutex;
 extern double balance;
@@ -53,6 +55,8 @@ double calculatePassiveIncome();
 double getGeneratorIncomePerSecond(const Generator& gen);
 void simpleMode();
 void settingsMenu(std::string& username);
+std::string getSavePath();
+void saveGame();
 
 // Command System Functions
 void initializeCommands();

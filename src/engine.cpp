@@ -27,7 +27,8 @@ void initializeCommands() {
         {"clear_screen", "clear"},
         {"rename", "mv"},
         {"help_menu", "man"},
-        {"set_username", "usermod"}
+        {"set_username", "usermod"},
+        {"save_game", "umount"}
     };
     
     // Initial alle Commands auf sich selbst verweisen lassen
@@ -153,6 +154,47 @@ void clearScreen() {
     system("clear");
     system("~/.config/fastfetch/smarter-fastfetch");
 #endif
+}
+
+std::string getSavePath() {
+    std::string fullPath;
+
+#ifdef _WIN32
+    const char* appdata = getenv("APPDATA");
+    if (appdata)
+        fullPath = std::string(appdata) + "\\BashIdler\\savegame.txt";
+    else
+        fullPath = "savegame.txt"; // Fallback
+#else
+    const char* home = getenv("HOME");
+    if (home)
+        fullPath = std::string(home) + "/.local/share/bashidler/savegame.txt";
+    else
+        fullPath = "savegame.txt"; // Fallback
+#endif
+
+    // Versuche den Zielordner zu erstellen (macht nichts, wenn er schon da ist)
+    std::filesystem::path parentDir = std::filesystem::path(fullPath).parent_path();
+    std::error_code ec;
+    std::filesystem::create_directories(parentDir, ec);
+    if (ec) {
+        // Optional: Fehler loggen
+        std::cerr << "Error while saving the game: " << ec.message() << std::endl;
+    }
+
+    return fullPath;
+}
+
+void saveGame() {
+    std::string path = getSavePath();
+    std::ofstream file(path);
+    if (file.is_open()) {
+        file << "Level: 10\nXP: 8000\n";
+        file.close();
+        std::cout << "Spiel gespeichert unter: " << path << std::endl;
+    } else {
+        std::cerr << "Konnte Savefile nicht öffnen!" << std::endl;
+    }
 }
 
 void help() {

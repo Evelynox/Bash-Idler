@@ -21,7 +21,7 @@ int main() {
     std::thread gameThread(updateGameStatus);
     gameThread.detach();
     clearScreen();
-    std::cout << "Type 'help' for commands\n";
+    std::cout << "Type 'man' for commands\n";
 
     std::string username = "bash";
 
@@ -121,6 +121,9 @@ int main() {
         }
         else if ( tokens[0] == "usermod" != tokens.size() > 2) {
             username = tokens[1];
+        }
+        else if (originalCmd == "save_game") {
+            saveGame();
         }
         else {
             std::cout << input << ": command not found\n";
