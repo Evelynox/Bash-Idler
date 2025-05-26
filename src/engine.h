@@ -19,12 +19,17 @@
 #include <regex>
 #include <fstream>
 #include <filesystem>
+#include <sstream>
 
 extern std::mutex balance_mutex;
 extern double balance;
 extern int availableGens;
 extern bool simpleModeOn;
 extern std::string username;
+extern bool debugMode;
+extern bool compactNumbers;  // Standard: true
+extern bool colorOutput;     // Standard: false
+extern double getGeneratorCost(int availableGens);
 
 struct Generator {
     double base_income;
@@ -47,16 +52,17 @@ void updateGameStatus();
 void genList();
 void help();
 void showGeneratorStats(int index = -1);
-void upgradeGenerator(int index, const std::string& type);
-double getGeneratorCost(int availableGens);
+void upgradeGeneratorWithFormatting(int index, const std::string& type);
 void buyGenerator();
 std::string generateGenName();
 double calculatePassiveIncome();
 double getGeneratorIncomePerSecond(const Generator& gen);
-void simpleMode();
 void settingsMenu(std::string& username);
 std::string getSavePath();
 void saveGame();
+void loadGame();
+void showBalance();
+void debug();
 
 // Command System Functions
 void initializeCommands();

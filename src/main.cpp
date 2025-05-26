@@ -1,7 +1,4 @@
 //main.cpp
-#include <iostream>
-#include <thread>
-#include <sstream>
 #include "engine.h"
 
 std::vector<std::string> split(const std::string& s) {
@@ -81,15 +78,15 @@ int main() {
                       << getGeneratorCost(availableGens) << "\n";
         }
         else if (originalCmd == "balance") {
-            std::lock_guard<std::mutex> guard(balance_mutex);
-            std::cout << "Balance: $" << balance << "\n";
+            showBalance();
         }
         else if (originalCmd == "list_gens") {
             genList();
         }
-        else if (originalCmd == "show_stats") {
+else if (originalCmd == "show_stats") {
             if (tokens.size() == 1) {
-                showGeneratorStats(-1); // Alle anzeigen
+                std::cout << "Usage: " << command << " [N] - Show stats for generator N\n";
+                std::cout << "Use " << command << " without arguments to see this message\n";
             } else {
                 try {
                     int num = std::stoi(tokens[1]);
@@ -104,7 +101,7 @@ int main() {
             try {
                 int num = std::stoi(tokens[2]);
                 if (type == "money" || type == "speed") {
-                    upgradeGenerator(num, type);
+                    upgradeGeneratorWithFormatting(num, type);
                 } else {
                     std::cout << "Usage: " << command << " [money|speed] N\n";
                 }
@@ -116,7 +113,6 @@ int main() {
             clearScreen();
         }
         else if (input == "settings") {
-            std::cin.ignore(); // Buffer leeren für getline nach cin
             settingsMenu(username);
         }
         else if ( tokens[0] == "usermod" != tokens.size() > 2) {
@@ -124,6 +120,12 @@ int main() {
         }
         else if (originalCmd == "save_game") {
             saveGame();
+        }
+        else if (originalCmd == "load_game") {
+        loadGame();
+        }
+        else if (originalCmd == "debug_password") {
+            debugMode = true;
         }
         else {
             std::cout << input << ": command not found\n";
