@@ -258,6 +258,70 @@ void upgradeGeneratorWithFormatting(int index, const std::string& type) {
     }
 }
 
+std::string escapeJsonString(const std::string& input) {
+    std::string output;
+    for (char c : input) {
+        switch (c) {
+            case '"': output += "\\\""; break;
+            case '\\': output += "\\\\"; break;
+            case '\b': output += "\\b"; break;
+            case '\f': output += "\\f"; break;
+            case '\n': output += "\\n"; break;
+            case '\r': output += "\\r"; break;
+            case '\t': output += "\\t"; break;
+            default: output += c; break;
+        }
+    }
+    return output;
+}
+
+// Hilfsfunktion zum Parsen einfacher JSON-Werte
+std::string getJsonValue(const std::string& json, const std::string& key) {
+    std::string searchKey = "\"" + key + "\":";
+    size_t pos = json.find(searchKey);
+    if (pos == std::string::npos) return "";
+    
+    pos += searchKey.length();
+    
+    // Whitespace überspringen
+    while (pos < json.length() && std::isspace(json[pos])) pos++;
+    
+    if (pos >= json.length()) return "";
+    
+    std::string value;
+    if (json[pos] == '"') {
+        // String-Wert
+        pos++; // Öffnende Anführungszeichen überspringen
+        while (pos < json.length() && json[pos] != '"') {
+            if (json[pos] == '\\' && pos + 1 < json.length()) {
+                pos++; // Escape-Zeichen überspringen
+                switch (json[pos]) {
+                    case 'n': value += '\n'; break;
+                    case 't': value += '\t'; break;
+                    case 'r': value += '\r'; break;
+                    case 'b': value += '\b'; break;
+                    case 'f': value += '\f'; break;
+                    case '"': value += '"'; break;
+                    case '\\': value += '\\'; break;
+                    default: value += json[pos]; break;
+                }
+            } else {
+                value += json[pos];
+            }
+            pos++;
+        }
+    } else {
+        // Zahlenwert oder boolean
+        while (pos < json.length() && json[pos] != ',' && json[pos] != '}' && json[pos] != ']') {
+            if (!std::isspace(json[pos])) {
+                value += json[pos];
+            }
+            pos++;
+        }
+    }
+    
+    return value;
+}
 
 double getGeneratorCost(int availableGens) {
     if (availableGens == 0) {
@@ -316,85 +380,191 @@ void saveGame() {
     std::string path = getSavePath();
     std::ofstream file(path);
     if (file.is_open()) {
-        // Speichere die aktuellen Command-Aliases, nicht die Original-Commands
-        file << "aliases:\n";
-        for (const auto& [alias, originalCmd] : commandAliases) {
-            file << alias << "=" << originalCmd << "\n";
+        file << "{\n";
+        
+        // Spielstand-Daten
+        file << "  \"gameData\": {\n";
+        file << "    \"balance\": " << balance << ",\n";
+        file << "    \"availableGens\": " << availableGens << ",\n";
+        file << "    \"compactNumbers\": " << (compactNumbers ? "true" : "false") << ",\n";
+        file << "    \"colorOutput\": " << (colorOutput ? "true" : "false") << "\n";
+        file << "  },\n";
+        
+        // Generatoren
+        file << "  \"generators\": [\n";
+        for (size_t i = 0; i < generators.size(); ++i) {
+            const auto& gen = generators[i];
+            file << "    {\n";
+            file << "      \"name\": \"" << escapeJsonString(gen.name) << "\",\n";
+            file << "      \"base_income\": " << gen.base_income << ",\n";
+            file << "      \"income_multiplier\": " << gen.income_multiplier << ",\n";
+            file << "      \"speed\": " << gen.speed << ",\n";
+            file << "      \"moneyLevel\": " << gen.moneyLevel << ",\n";
+            file << "      \"speedLevel\": " << gen.speedLevel << "\n";
+            file << "    }";
+            if (i < generators.size() - 1) file << ",";
+            file << "\n";
         }
+        file << "  ],\n";
         
-        // Optional: Auch andere Spieldaten speichern
-        file << "gamedata:\n";
-        file << "balance=" << balance << "\n";
-        file << "availableGens=" << availableGens << "\n";
-
+        // Command-Aliases
+        file << "  \"commandAliases\": {\n";
+        size_t aliasCount = 0;
+        for (const auto& [alias, originalCmd] : commandAliases) {
+            file << "    \"" << escapeJsonString(alias) << "\": \"" << escapeJsonString(originalCmd) << "\"";
+            if (++aliasCount < commandAliases.size()) file << ",";
+            file << "\n";
+        }
+        file << "  }\n";
         
+        file << "}\n";
         file.close();
-        std::cout << "Spiel gespeichert unter: " << path << std::endl;
+        
+        std::cout << getColor("success") << "Spiel gespeichert unter: " << path << getColor("reset") << std::endl;
     } else {
-        std::cerr << "Konnte Savefile nicht öffnen!" << std::endl;
+        std::cerr << getColor("error") << "Konnte Savefile nicht öffnen!" << getColor("reset") << std::endl;
     }
 }
+
 
 void loadGame() {
     std::string path = getSavePath();
     std::ifstream file(path);
     if (file.is_open()) {
-        std::string line;
-        commandAliases.clear(); // Alte Aliases löschen
+        // Gesamte Datei einlesen
+        std::string jsonContent((std::istreambuf_iterator<char>(file)),
+                                std::istreambuf_iterator<char>());
+        file.close();
         
-        bool inAliasSection = false;
-        bool inGameDataSection = false;
-
-        while (std::getline(file, line)) {
-            if (line == "aliases:") {
-                inAliasSection = true;
-                inGameDataSection = false;
-                continue;
-            }
+        // Alte Daten zurücksetzen
+        generators.clear();
+        commandAliases.clear();
+        
+        // Spielstand-Daten laden
+        std::string balanceStr = getJsonValue(jsonContent, "balance");
+        if (!balanceStr.empty()) {
+            balance = std::stod(balanceStr);
+        }
+        
+        std::string availableGensStr = getJsonValue(jsonContent, "availableGens");
+        if (!availableGensStr.empty()) {
+            availableGens = std::stoi(availableGensStr);
+        }
+        
+        std::string compactStr = getJsonValue(jsonContent, "compactNumbers");
+        if (!compactStr.empty()) {
+            compactNumbers = (compactStr == "true");
+        }
+        
+        std::string colorStr = getJsonValue(jsonContent, "colorOutput");
+        if (!colorStr.empty()) {
+            colorOutput = (colorStr == "true");
+        }
+        
+        // Generatoren laden
+        size_t genStart = jsonContent.find("\"generators\":");
+        if (genStart != std::string::npos) {
+            size_t arrayStart = jsonContent.find("[", genStart);
+            size_t arrayEnd = jsonContent.find("]", arrayStart);
             
-            if (line == "gamedata:") {
-                inAliasSection = false;
-                inGameDataSection = true;
-                continue;
-            }
-
-            if (inAliasSection && !line.empty()) {
-                size_t pos = line.find('=');
-                if (pos != std::string::npos) {
-                    std::string alias = line.substr(0, pos);
-                    std::string originalCmd = line.substr(pos + 1);
-                    commandAliases[alias] = originalCmd;
+            if (arrayStart != std::string::npos && arrayEnd != std::string::npos) {
+                std::string genArray = jsonContent.substr(arrayStart + 1, arrayEnd - arrayStart - 1);
+                
+                // Einzelne Generator-Objekte parsen
+                size_t objStart = 0;
+                int braceCount = 0;
+                size_t currentPos = 0;
+                
+                while (currentPos < genArray.length()) {
+                    if (genArray[currentPos] == '{') {
+                        if (braceCount == 0) objStart = currentPos;
+                        braceCount++;
+                    } else if (genArray[currentPos] == '}') {
+                        braceCount--;
+                        if (braceCount == 0) {
+                            // Vollständiges Generator-Objekt gefunden
+                            std::string genObj = genArray.substr(objStart, currentPos - objStart + 1);
+                            
+                            Generator gen;
+                            
+                            std::string name = getJsonValue(genObj, "name");
+                            if (!name.empty()) gen.name = name;
+                            
+                            std::string baseIncome = getJsonValue(genObj, "base_income");
+                            if (!baseIncome.empty()) gen.base_income = std::stod(baseIncome);
+                            
+                            std::string incomeMultiplier = getJsonValue(genObj, "income_multiplier");
+                            if (!incomeMultiplier.empty()) gen.income_multiplier = std::stod(incomeMultiplier);
+                            
+                            std::string speed = getJsonValue(genObj, "speed");
+                            if (!speed.empty()) gen.speed = std::stod(speed);
+                            
+                            std::string moneyLevel = getJsonValue(genObj, "moneyLevel");
+                            if (!moneyLevel.empty()) gen.moneyLevel = std::stoi(moneyLevel);
+                            
+                            std::string speedLevel = getJsonValue(genObj, "speedLevel");
+                            if (!speedLevel.empty()) gen.speedLevel = std::stoi(speedLevel);
+                            
+                            generators.push_back(gen);
+                        }
+                    }
+                    currentPos++;
                 }
             }
+        }
+        
+        // Command-Aliases laden
+        size_t aliasStart = jsonContent.find("\"commandAliases\":");
+        if (aliasStart != std::string::npos) {
+            size_t objStart = jsonContent.find("{", aliasStart);
+            size_t objEnd = jsonContent.find("}", objStart);
             
-            if (inGameDataSection && !line.empty()) {
-                size_t pos = line.find('=');
-                if (pos != std::string::npos) {
-                    std::string key = line.substr(0, pos);
-                    std::string value = line.substr(pos + 1);
-                    
-                    if (key == "balance") {
-                        balance = std::stod(value);
-                    } else if (key == "availableGens") {
-                        availableGens = std::stoi(value);
+            if (objStart != std::string::npos && objEnd != std::string::npos) {
+                std::string aliasObj = jsonContent.substr(objStart + 1, objEnd - objStart - 1);
+                
+                // Aliases parsen
+                std::istringstream iss(aliasObj);
+                std::string line;
+                while (std::getline(iss, line)) {
+                    size_t colonPos = line.find(":");
+                    if (colonPos != std::string::npos) {
+                        std::string key = line.substr(0, colonPos);
+                        std::string value = line.substr(colonPos + 1);
+                        
+                        // Anführungszeichen und Whitespace entfernen
+                        key.erase(0, key.find_first_not_of(" \t\""));
+                        key.erase(key.find_last_not_of(" \t\"") + 1);
+                        
+                        value.erase(0, value.find_first_not_of(" \t\""));
+                        value.erase(value.find_last_not_of(" \t\",") + 1);
+                        
+                        if (!key.empty() && !value.empty()) {
+                            commandAliases[key] = value;
+                        }
                     }
                 }
             }
         }
         
-        file.close();
-        std::cout << "Spiel geladen von: " << path << std::endl;
-        
-        // Debug: Zeige geladene Aliases
-        if (debugMode) {
-            std::cout << "Geladene Aliases:\n";
-            for (const auto& [alias, cmd] : commandAliases) {
-                std::cout << "  " << alias << " -> " << cmd << "\n";
-            }
+        // Falls keine Aliases geladen wurden, Standard-Commands initialisieren
+        if (commandAliases.empty()) {
+            initializeCommands();
         }
+        
+        std::cout << getColor("success") << "Spiel geladen von: " << path << getColor("reset") << std::endl;
+        std::cout << getColor("info") << "Generatoren geladen: " << generators.size() << getColor("reset") << std::endl;
+        
+        // Debug-Info
+        if (debugMode) {
+            std::cout << "Loaded data:\n";
+            std::cout << "  Balance: $" << balance << "\n";
+            std::cout << "  Available Gens: " << availableGens << "\n";
+            std::cout << "  Generators: " << generators.size() << "\n";
+            std::cout << "  Command Aliases: " << commandAliases.size() << "\n";
+        }
+        
     } else {
-        std::cout << "Kein Savefile gefunden. Neue Sitzung gestartet." << std::endl;
-        // Stelle sicher, dass die Standard-Aliases geladen sind
+        std::cout << getColor("info") << "No savefile found. New session started." << getColor("reset") << std::endl;
         initializeCommands();
     }
 }
@@ -469,9 +639,9 @@ void loadGameAlternative() {
         }
         
         file.close();
-        std::cout << "Spiel geladen von: " << path << std::endl;
+        std::cout << "Game loaded from: " << path << std::endl;
     } else {
-        std::cout << "Kein Savefile gefunden. Neue Sitzung gestartet." << std::endl;
+        std::cout << "No savefile found. New session started." << std::endl;
         initializeCommands();
     }
 }

@@ -20,6 +20,7 @@
 #include <fstream>
 #include <filesystem>
 #include <sstream>
+#include "json.hpp"
 
 extern std::mutex balance_mutex;
 extern double balance;

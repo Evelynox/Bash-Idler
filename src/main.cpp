@@ -86,7 +86,6 @@ int main() {
 else if (originalCmd == "show_stats") {
             if (tokens.size() == 1) {
                 std::cout << "Usage: " << command << " [N] - Show stats for generator N\n";
-                std::cout << "Use " << command << " without arguments to see this message\n";
             } else {
                 try {
                     int num = std::stoi(tokens[1]);
