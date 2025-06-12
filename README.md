@@ -53,7 +53,7 @@ Just grab the latest binary from the releases page.
 
 **Option 2: Build it yourself**
 ```bash
-git clone https://github.com/yourusername/BashIdler.git
+git clone https://github.com/Evelynox/Bash-Idler
 cd BashIdler
 g++ -std=c++17 -pthread -o bashidler main.cpp engine.cpp
 ./bashidler
