@@ -34,7 +34,7 @@ The game uses Linux-style commands that you can customize:
 |----------------|------------------|---------------------------------------------|
 | `yay`          | Buy Generator    | Purchase a new generator                    |
 | `cat`          | Show Cost        | Display cost of next generator              |
-| `systemctl     | Upgrade          | Upgrade generator N's income or speed       |
+| `systemctl'    | Upgrade          | Upgrade generator N's income or speed       |
 | `echo`         | Balance          | Show current money                          |
 | `lsblk`        | List Generators  | Display all owned generators                |
 | `ls [N]`       | Show Stats       | Show detailed stats for generator N         |
