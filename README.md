@@ -30,20 +30,23 @@ Unlock generators, automate your point production, and let the game run passivel
 ## 🖥️ Commands
 The game uses Linux-style commands that you can customize:
 
-| Default Command | Function | Description |
-|----------------|----------|-------------|
-| `yay` | Buy Generator | Purchase a new generator |
-| `cat` | Show Cost | Display cost of next generator |
-| `systemctl [money\|speed] [N]` | Upgrade | Upgrade generator N's income or speed |
-| `echo` | Balance | Show current money |
-| `lsblk` | List Generators | Display all owned generators |
-| `ls [N]` | Show Stats | Show detailed stats for generator N |
-| `mv [old] [new]` | Rename Command | Rename any existing command |
-| `clear` | Clear Screen | Clear terminal (with fastfetch) |
-| `man` | Help | Show command list |
-| `umount` | Save Game | Save current progress |
-| `mount` | Load Game | Load saved progress |
-| `settings` | Settings Menu | Configure display options |
+| Default Command | Function         | Description                                 |
+|----------------|------------------|---------------------------------------------|
+| `yay`          | Buy Generator    | Purchase a new generator                    |
+| `cat`          | Show Cost        | Display cost of next generator              |
+| `systemctl [money|speed] [N]` | Upgrade | Upgrade generator N's income or speed |
+| `echo`         | Balance          | Show current money                          |
+| `lsblk`        | List Generators  | Display all owned generators                |
+| `ls [N]`       | Show Stats       | Show detailed stats for generator N         |
+| `mv [old] [new]` | Rename Command | Rename any existing command                 |
+| `clear`        | Clear Screen     | Clear terminal (with fastfetch)             |
+| `man`          | Help             | Show command list                           |
+| `umount`       | Save Game        | Save current progress                       |
+| `mount`        | Load Game        | Load saved progress                         |
+| `usermod`      | Set Username     | Change your username                        |
+| `hostname`     | Change Hostname  | Change the hostname of your session         |
+| `settings`     | Settings Menu    | Configure display options                   |
+
 
 ---
 
