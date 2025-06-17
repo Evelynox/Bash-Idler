@@ -9,6 +9,10 @@ std::vector<std::string> split(const std::string& s) {
     return tokens;
 }
 
+
+    std::string username = "bash";
+    std::string hostname = "idler";
+
 int main() {
     srand(time(0));
     
@@ -20,10 +24,8 @@ int main() {
     clearScreen();
     std::cout << "Type 'man' for commands\n";
 
-    std::string username = "bash";
-
     while (true) {
-        std::cout << "[" << username << "@idler ~]$ ";
+        std::cout << "[" << username << "@" << hostname << " ~]$ ";
         std::string input;
         std::getline(std::cin, input);
 
@@ -111,17 +113,20 @@ else if (originalCmd == "show_stats") {
         else if (originalCmd == "clear_screen") {
             clearScreen();
         }
-        else if (input == "settings") {
-            settingsMenu(username);
+        else if (originalCmd == "setting_menu") {
+            settings();
         }
         else if ( tokens[0] == "usermod" != tokens.size() > 2) {
             username = tokens[1];
+        }
+        else if ( tokens[0] == "hostname" != tokens.size() > 2) {
+            hostname = tokens[1];
         }
         else if (originalCmd == "save_game") {
             saveGame();
         }
         else if (originalCmd == "load_game") {
-        loadGame();
+            loadGame();
         }
         else if (originalCmd == "debug_password") {
             debugMode = true;

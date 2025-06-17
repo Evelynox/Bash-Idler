@@ -34,7 +34,9 @@ void initializeCommands() {
         {"set_username", "usermod"},
         {"save_game", "umount"},
         {"debug_password", "sudo"},
-        {"load_game", "mount"}
+        {"load_game", "mount"},
+        {"change_host", "hostname"},
+        {"setting_menu", "settings"}
     };
     
     // Let the stupid compiler know the Database type shi
@@ -388,6 +390,8 @@ void saveGame() {
         file << "    \"availableGens\": " << availableGens << ",\n";
         file << "    \"compactNumbers\": " << (compactNumbers ? "true" : "false") << ",\n";
         file << "    \"colorOutput\": " << (colorOutput ? "true" : "false") << "\n";
+        file << "    \"username\": \"" << username << "\"\n";
+        file << "    \"hostname\": \"" << hostname << "\"\n";
         file << "  },\n";
         
         // Generatoren
@@ -420,9 +424,9 @@ void saveGame() {
         file << "}\n";
         file.close();
         
-        std::cout << getColor("success") << "Spiel gespeichert unter: " << path << getColor("reset") << std::endl;
+        std::cout << getColor("success") << "Game saved under: " << path << getColor("reset") << std::endl;
     } else {
-        std::cerr << getColor("error") << "Konnte Savefile nicht öffnen!" << getColor("reset") << std::endl;
+        std::cerr << getColor("error") << "Could not open savefile!" << getColor("reset") << std::endl;
     }
 }
 
@@ -459,6 +463,16 @@ void loadGame() {
         std::string colorStr = getJsonValue(jsonContent, "colorOutput");
         if (!colorStr.empty()) {
             colorOutput = (colorStr == "true");
+        }
+
+        std::string usernameStr = getJsonValue(jsonContent, "username");
+        if (!usernameStr.empty()) {
+            username = usernameStr;
+        }
+
+        std::string hostnameStr = getJsonValue(jsonContent, "hostname");
+        if (!hostnameStr.empty()) {
+            hostname = hostnameStr;
         }
         
         // Generatoren laden
@@ -546,13 +560,13 @@ void loadGame() {
             }
         }
         
-        // Falls keine Aliases geladen wurden, Standard-Commands initialisieren
+        // If no aliases have been loaded, initialize standard commands
         if (commandAliases.empty()) {
             initializeCommands();
         }
         
-        std::cout << getColor("success") << "Spiel geladen von: " << path << getColor("reset") << std::endl;
-        std::cout << getColor("info") << "Generatoren geladen: " << generators.size() << getColor("reset") << std::endl;
+        std::cout << getColor("success") << "Game loaded from: " << path << getColor("reset") << std::endl;
+        std::cout << getColor("info") << "Generators loaded: " << generators.size() << getColor("reset") << std::endl;
         
         // Debug-Info
         if (debugMode) {
@@ -702,7 +716,13 @@ void handleBuyGenerator() {
     }
 }
 
-void settingsMenu(std::string& username) {
+void input_fallback() {
+    std::cin.clear();
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+    std::cout << "std::cin.fail(): Expected an int. Try again :3\n";
+}
+
+void settings() {
     int menuInput = 0;
     
     while (true) {
@@ -714,6 +734,11 @@ void settingsMenu(std::string& username) {
         std::cout << "[0] Back\n";
         std::cout << getColor("info") << "(settings) " << getColor("reset");
         std::cin >> menuInput;
+
+        if (std::cin.fail()) {
+            input_fallback();
+            continue;
+        }
 
         switch(menuInput) {
             case 0: 
@@ -743,7 +768,7 @@ void help() {
     std::cout << std::left;
 
     std::string buyCmd = "", showCostCmd = "", upgradeCmd = "", balanceCmd = "";
-    std::string listCmd = "", statsCmd = "", clearCmd = "", helpCmd = "", renameCmd = "";
+    std::string listCmd = "", statsCmd = "", clearCmd = "", helpCmd = "", renameCmd = "", loadCmd = "", saveCmd = "";
     
     for (const auto& pair : commandAliases) {
         if (pair.second == "buy_gen") buyCmd = pair.first;
@@ -755,6 +780,8 @@ void help() {
         else if (pair.second == "clear_screen") clearCmd = pair.first;
         else if (pair.second == "help_menu") helpCmd = pair.first;
         else if (pair.second == "rename") renameCmd = pair.first;
+        else if (pair.second == "save_game") saveCmd = pair.first;
+        else if (pair.second == "load_game") loadCmd = pair.first;
     }
 
     std::cout << "  " << std::setw(30) << buyCmd << "- Buy a new generator\n";
@@ -767,6 +794,8 @@ void help() {
 
     std::cout << "  " << std::setw(30) << clearCmd << "- Clear the screen\n";
     std::cout << "  " << std::setw(30) << helpCmd << "- Show this help message\n";
+    std::cout << "  " << std::setw(30) << saveCmd << "- Saves the current state of the game\n";
+    std::cout << "  " << std::setw(30) << loadCmd << "- Loads the current state of the game\n";
     std::cout << "  " << std::setw(30) << renameCmd + " [old] [new]" << "- Rename an existing command\n";
     std::cout << "  " << std::setw(30) << "settings" << "- Open settings menu\n";
 }

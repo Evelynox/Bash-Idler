@@ -2,12 +2,15 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#include <codecvt>
 #include <iostream>
 #include <vector>
 #include <mutex>
 #include <string>
 #include <iomanip>
 #include <algorithm>
+#include <limits>
+#include <locale>
 #include <cctype> 
 #include <map>
 #include <unordered_map>
@@ -27,6 +30,7 @@ extern double balance;
 extern int availableGens;
 extern bool simpleModeOn;
 extern std::string username;
+extern std::string hostname;
 extern bool debugMode;
 extern bool compactNumbers;  // Standard: true
 extern bool colorOutput;     // Standard: false
@@ -58,7 +62,7 @@ void buyGenerator();
 std::string generateGenName();
 double calculatePassiveIncome();
 double getGeneratorIncomePerSecond(const Generator& gen);
-void settingsMenu(std::string& username);
+void settings();
 std::string getSavePath();
 void saveGame();
 void loadGame();
