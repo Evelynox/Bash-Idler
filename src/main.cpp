@@ -67,9 +67,9 @@ int main() {
                 balance -= cost;
                 buyGenerator();
                 std::cout << "Purchased " << generators.back().name
-                          << " for $" << cost << "\n";
+                          << " for $" << formatNumber(cost) << "\n";
             } else {
-                std::cout << "Need $" << cost - balance << " more!\n";
+                std::cout << "Need $" << formatNumber(cost - balance) << " more!\n";
             }
         }
         else if (originalCmd == "help_menu") {
@@ -77,7 +77,7 @@ int main() {
         }
         else if (originalCmd == "show_cost") {
             std::cout << "Next generator costs: $"
-                      << getGeneratorCost(availableGens) << "\n";
+                      << formatNumber(getGeneratorCost(availableGens)) << "\n";
         }
         else if (originalCmd == "balance") {
             showBalance();
@@ -109,6 +109,13 @@ else if (originalCmd == "show_stats") {
             } catch (...) {
                 std::cout << "Usage: " << command << " [money|speed] N\n";
             }
+        }
+        else if (tokens[0] == "export") {
+            std::string command;
+            for (size_t i = 1; i < tokens.size(); ++i) {
+                        command += tokens[i] + " ";
+    }
+            system(command.c_str());
         }
         else if (originalCmd == "clear_screen") {
             clearScreen();

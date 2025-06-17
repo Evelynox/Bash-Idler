@@ -2,6 +2,9 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#include <cstdio>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include <codecvt>
 #include <iostream>
 #include <vector>
@@ -64,6 +67,7 @@ double calculatePassiveIncome();
 double getGeneratorIncomePerSecond(const Generator& gen);
 void settings();
 std::string getSavePath();
+std::string formatNumber(double number);
 void saveGame();
 void loadGame();
 void showBalance();

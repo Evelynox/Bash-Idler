@@ -36,7 +36,8 @@ void initializeCommands() {
         {"debug_password", "sudo"},
         {"load_game", "mount"},
         {"change_host", "hostname"},
-        {"setting_menu", "settings"}
+        {"setting_menu", "settings"},
+        {"real_command", "export"}
     };
     
     // Let the stupid compiler know the Database type shi
@@ -389,8 +390,8 @@ void saveGame() {
         file << "    \"balance\": " << balance << ",\n";
         file << "    \"availableGens\": " << availableGens << ",\n";
         file << "    \"compactNumbers\": " << (compactNumbers ? "true" : "false") << ",\n";
-        file << "    \"colorOutput\": " << (colorOutput ? "true" : "false") << "\n";
-        file << "    \"username\": \"" << username << "\"\n";
+        file << "    \"colorOutput\": " << (colorOutput ? "true" : "false") << ",\n";
+        file << "    \"username\": \"" << username << "\",\n";
         file << "    \"hostname\": \"" << hostname << "\"\n";
         file << "  },\n";
         
@@ -764,40 +765,98 @@ void settings() {
 }
 
 void help() {
+
+    const std::string bold_on = "\033[1m";
+    const std::string bold_off = "\033[0m";
+
     std::cout << "Commands:\n";
     std::cout << std::left;
 
     std::string buyCmd = "", showCostCmd = "", upgradeCmd = "", balanceCmd = "";
-    std::string listCmd = "", statsCmd = "", clearCmd = "", helpCmd = "", renameCmd = "", loadCmd = "", saveCmd = "";
+    std::string listCmd = "", statsCmd = "", clearCmd = "", helpCmd = "", renameCmd = "", loadCmd = "", saveCmd = "", usermodCmd = "", hostnameCmd = "", settingsCmd;
     
     for (const auto& pair : commandAliases) {
+        // Core gameplay commands
         if (pair.second == "buy_gen") buyCmd = pair.first;
         else if (pair.second == "show_cost") showCostCmd = pair.first;
         else if (pair.second == "upgrade_gen") upgradeCmd = pair.first;
         else if (pair.second == "balance") balanceCmd = pair.first;
         else if (pair.second == "list_gens") listCmd = pair.first;
         else if (pair.second == "show_stats") statsCmd = pair.first;
-        else if (pair.second == "clear_screen") clearCmd = pair.first;
+
+        // Interface and utility commands
         else if (pair.second == "help_menu") helpCmd = pair.first;
+        else if (pair.second == "clear_screen") clearCmd = pair.first;
+        else if (pair.second == "setting_menu") settingsCmd = pair.first;
+
+        // Customization commands
         else if (pair.second == "rename") renameCmd = pair.first;
+        else if (pair.second == "set_username") usermodCmd = pair.first;
+        else if (pair.second == "change_host") hostnameCmd = pair.first;
+
+        // Save/load commands
         else if (pair.second == "save_game") saveCmd = pair.first;
         else if (pair.second == "load_game") loadCmd = pair.first;
+
+        // Note: "debug_password" intentionally not assigned (used internally)
     }
 
-    std::cout << "  " << std::setw(30) << buyCmd << "- Buy a new generator\n";
-    std::cout << "  " << std::setw(30) << showCostCmd << "- Show cost of next generator\n";
-    std::cout << "  " << std::setw(30) << upgradeCmd + " [money|speed] [N]" << "- Upgrade generator N's income or speed\n";
+    // ── Core Gameplay ──────────────────────────────
+    std::cout << bold_on << "CORE GAMEPLAY COMMANDS\n" << bold_off;
 
-    std::cout << "  " << std::setw(30) << balanceCmd << "- Show your current balance\n";
-    std::cout << "  " << std::setw(30) << listCmd << "- List all owned generators\n";
-    std::cout << "  " << std::setw(30) << statsCmd + " [N]" << "- Show stats for all or generator N\n";
+    std::cout << "   " << bold_on << buyCmd << bold_off << "\n"
+              << "          Purchase a new generator\n\n";
 
-    std::cout << "  " << std::setw(30) << clearCmd << "- Clear the screen\n";
-    std::cout << "  " << std::setw(30) << helpCmd << "- Show this help message\n";
-    std::cout << "  " << std::setw(30) << saveCmd << "- Saves the current state of the game\n";
-    std::cout << "  " << std::setw(30) << loadCmd << "- Loads the current state of the game\n";
-    std::cout << "  " << std::setw(30) << renameCmd + " [old] [new]" << "- Rename an existing command\n";
-    std::cout << "  " << std::setw(30) << "settings" << "- Open settings menu\n";
+    std::cout << "   " << bold_on << showCostCmd << bold_off << "\n"
+              << "          Show cost of the next generator\n\n";
+
+    std::cout << "   " << bold_on << upgradeCmd << " [money|speed] [NUMBER]" << bold_off << "\n"
+              << "          Upgrade generator N's income or speed\n\n";
+
+    std::cout << "   " << bold_on << balanceCmd << bold_off << "\n"
+              << "          Show your current balance\n\n";
+
+    std::cout << "   " << bold_on << listCmd << bold_off << "\n"
+              << "          List all owned generators\n\n";
+
+    std::cout << "   " << bold_on << statsCmd << " [NUMBER]" << bold_off << "\n"
+              << "          Show stats for generator Number\n\n";
+
+
+    // ── Interface & Utility ────────────────────────
+    std::cout << bold_on << "INTERFACE & UTILITY\n" << bold_off;
+
+    std::cout << "   " << bold_on << clearCmd << bold_off << "\n"
+              << "          Clear the terminal screen\n\n";
+
+    std::cout << "   " << bold_on << helpCmd << bold_off << "\n"
+              << "          Show this help menu\n\n";
+
+    std::cout << "   " << bold_on << settingsCmd << bold_off << "\n"
+              << "          Open the settings menu\n\n";
+
+
+    // ── Customization ──────────────────────────────
+    std::cout << bold_on << "CUSTOMIZATION\n" << bold_off;
+
+    std::cout << "   " << bold_on << renameCmd << " [OLD] [NEW]" << bold_off << "\n"
+              << "          Rename an existing command\n\n";
+
+    std::cout << "   " << bold_on << usermodCmd << " [name]" << bold_off << "\n"
+              << "          Change your username\n\n";
+
+    std::cout << "   " << bold_on << hostnameCmd << " [name]" << bold_off << "\n"
+              << "          Change your hostname\n\n";
+
+
+    // ── Save & Load ────────────────────────────────
+    std::cout << bold_on << "SAVE & LOAD\n" << bold_off;
+
+    std::cout << "   " << bold_on << saveCmd << bold_off << "\n"
+              << "          Save your current progress\n\n";
+
+    std::cout << "   " << bold_on << loadCmd << bold_off << "\n"
+              << "          Load your saved progress\n\n";
 }
 
 void genList() {
