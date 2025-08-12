@@ -90,4 +90,4 @@ g++ -std=c++17 -pthread -o bashidler main.cpp engine.cpp
 
 ---
 
-Made with 💙 by Addiv
+Made with 🩷 by Evelynox
